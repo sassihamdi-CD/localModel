@@ -14,17 +14,17 @@ from app.routers import auth, admin, documents, chat, logs, users
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup
-    print("🚀 Starting SecureDoc-RAG...")
+    print("Starting SecureDoc-RAG...")
     
     # Initialize rate limiter
     await rate_limiter.initialize()
     
-    print("✅ SecureDoc-RAG is ready!")
+    print("SecureDoc-RAG is ready!")
     
     yield
     
     # Shutdown
-    print("🛑 Shutting down SecureDoc-RAG...")
+    print("Shutting down SecureDoc-RAG...")
     await rate_limiter.close()
 
 

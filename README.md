@@ -1,16 +1,16 @@
 # SecureDoc-RAG
 
-A fully local, privacy-preserving document intelligence system. Upload PDFs, Word documents, or text files and chat with them using AI — everything runs on your machine with no external API keys required.
+A fully local, privacy-preserving document intelligence system. Upload PDFs, Word documents, or text files and chat with them. Everything runs on your machine with no external API keys required.
 
 ---
 
 ## What It Does
 
 - **Secure document vault** — upload and encrypt internal documents (PDF, DOCX, TXT)
-- **AI-powered chat** — ask questions about your documents, get answers with source context
+- **Intelligent chat** — ask questions about your documents, get answers with source context
 - **Role-based access control** — admin, employee, auditor roles with per-document permissions
 - **Full audit trail** — every login, upload, and query is logged
-- **100% local** — AI runs via Ollama on your machine, nothing leaves your network
+- **100% local** — runs via Ollama on your machine, nothing leaves your network
 
 ---
 
@@ -32,9 +32,9 @@ You need Docker Compose v2 or later (`docker compose`, not `docker-compose`).
 
 ---
 
-## Step 1 — Install Ollama and Pull the AI Model
+## Step 1 — Install Ollama and Pull the Model
 
-Ollama runs the local AI. Install it first, then download the model.
+Ollama runs the local language model. Install it first, then download the model.
 
 **Install Ollama:**
 - **macOS / Windows:** Download from https://ollama.com and run the installer
@@ -43,7 +43,7 @@ Ollama runs the local AI. Install it first, then download the model.
   curl -fsSL https://ollama.com/install.sh | sh
   ```
 
-**Pull the AI model** (downloads ~2 GB, one time only):
+**Pull the model** (downloads ~2 GB, one time only):
 ```bash
 ollama pull qwen2.5:3b
 ```
@@ -116,7 +116,7 @@ docker compose logs -f backend
 
 Wait until you see this line:
 ```
-✅ SecureDoc-RAG is ready!
+SecureDoc-RAG is ready!
 ```
 
 Press `Ctrl+C` to stop following logs — the app keeps running in the background.
@@ -172,14 +172,14 @@ The document is encrypted and indexed. Allow 10–30 seconds depending on file s
 
 1. Go to **Secure Terminal** in the left sidebar
 2. Type a question in the input box and press Enter
-3. The AI answers based only on the content of your uploaded documents
+3. The system answers based only on the content of your uploaded documents
 
 **Example questions:**
 - *"Summarize the main points of this document"*
 - *"What does the document say about [topic]?"*
 - *"What are the key steps in the incident response procedure?"*
 
-> The AI only answers from uploaded document content. If you ask about something not in any document, it will say it does not know — this is expected and correct.
+> The system only answers from uploaded document content. If you ask about something not in any document, it will say it does not know — this is expected and correct.
 
 ---
 
@@ -252,7 +252,7 @@ docker compose up -d
 
 ---
 
-### Chat returns no results or AI errors
+### Chat returns no results or model errors
 
 Check that the model is downloaded:
 ```bash
@@ -293,7 +293,7 @@ Your Browser
         ├── MySQL             → users, documents, audit logs
         ├── Redis             → rate limiting, caching
         ├── ChromaDB          → vector search for RAG
-        └── Ollama            → local AI model (runs on your machine)
+        └── Ollama            → local model (runs on your machine)
 ```
 
 All services run inside Docker except Ollama, which runs natively on your machine and is accessed by the backend container via `host.docker.internal:11434`.
