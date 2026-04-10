@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+backend/venv/
+backend/.venv/
+venv/
+.venv/
+
+# Local vector store data (rebuilt on first run)
+backend/chroma_db/
+
+# Uploaded files (user data)
+backend/uploads/
+
+# Alembic cache
+backend/alembic/__pycache__/
+
+# Node.js
+frontend/node_modules/
+node_modules/
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude Code internal files
+.claude/
+
+# Test documents (not part of the project)
+test_doc.txt
+complex_test_document.txt
+backend/test_rag.py
