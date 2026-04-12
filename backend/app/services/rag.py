@@ -24,9 +24,10 @@ class RAGService:
     def __init__(self):
         # 1. Initialize Local Embeddings (Runs 100% locally on CPU/GPU)
         # This is fast and small (~400MB)
+        hf_home = os.environ.get("HF_HOME", "/cache/huggingface")
         self.embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2",
-            cache_folder="/tmp/embeddings-cache"
+            cache_folder=os.path.join(hf_home, "sentence_transformers")
         )
         
         # 2. Vector Store (ChromaDB)
