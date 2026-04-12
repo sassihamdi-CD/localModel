@@ -40,7 +40,7 @@ class RAGService:
         ollama_base_url = os.environ.get("OLLAMA_BASE_URL", f"http://{os.environ.get('CHROMA_HOST', 'localhost')}:11434")
         self.llm = Ollama(
             base_url=ollama_base_url,
-            model=os.environ.get("OLLAMA_MODEL", "qwen3:8b")
+            model=os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
         )
         
         # 4. Text Splitter for Ingestion
@@ -68,6 +68,7 @@ class RAGService:
             or_(
                 Document.owner_id == user.id,
                 Document.classification == ClassificationLevel.PUBLIC,
+                Document.classification == ClassificationLevel.INTERNAL,
                 DocumentACL.user_id == user.id,
                 DocumentACL.role_id.in_(user_role_ids) if user_role_ids else False
             )
@@ -188,5 +189,19 @@ class RAGService:
                 "retrieved_doc_ids": [],
                 "blocked": False
             }
+
+    async def delete_document_chunks(self, doc_id: int):
+        """
+        Remove all embeddings for a document from the vector store.
+        """
+        try:
+            collection = self.vector_store._collection
+            results = collection.get(where={"doc_id": doc_id})
+            if results and results.get("ids"):
+                collection.delete(ids=results["ids"])
+                logger.info(f"Removed {len(results['ids'])} chunks for doc {doc_id} from vector store")
+        except Exception as e:
+            logger.error(f"Failed to delete embeddings for doc {doc_id}: {str(e)}")
+
 
 rag_service = RAGService()

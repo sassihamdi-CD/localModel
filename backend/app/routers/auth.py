@@ -16,6 +16,7 @@ from app.schemas.schemas import (
 )
 from app.core.security import create_access_token, create_refresh_token
 from app.dependencies import get_current_user
+from app.services.rate_limit import rate_limiter
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -53,11 +54,14 @@ async def login(
             email = None
             password = None
 
+    ip = request.client.host if request.client else "unknown"
+    await rate_limiter.check_login_rate_limit(ip)
+
     user = await auth_service.authenticate_user(
-        db=db, 
-        email=email, 
+        db=db,
+        email=email,
         password=password,
-        ip_address=request.client.host if request.client else "unknown",
+        ip_address=ip,
         user_agent=request.headers.get("user-agent", "unknown"),
         request_id=request.state.id if hasattr(request.state, "id") else "unknown"
     )
@@ -67,7 +71,7 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     if user.status != "ACTIVE":
          raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

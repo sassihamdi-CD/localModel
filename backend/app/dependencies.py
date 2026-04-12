@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
-from app.models.models import User, UserStatus
+from app.models.models import User, UserStatus, RevokedToken
 from app.services.rbac import rbac_service
 
 
@@ -31,7 +31,18 @@ async def get_current_user(
             detail="Invalid or expired access token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    # Check if token has been revoked (e.g. after logout)
+    jti = payload.get("jti")
+    if jti:
+        revoked = await db.execute(select(RevokedToken).where(RevokedToken.jti == jti))
+        if revoked.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked. Please log in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     # Get user ID from token
     user_id = payload.get("sub")
     

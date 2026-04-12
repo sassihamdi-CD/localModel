@@ -28,35 +28,38 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const pathname = usePathname()
     const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-    const routes = [
+    const allRoutes = [
         {
             href: "/chat",
             label: "Chat",
             icon: MessageSquare,
             active: pathname === "/chat",
+            show: user?.permissions?.includes("CHAT"),
         },
         {
             href: "/documents",
             label: "Documents",
             icon: FileText,
             active: pathname === "/documents",
+            show: user?.permissions?.includes("VIEW_DOC"),
         },
         {
             href: "/security",
-            label: "Security",
+            label: "Audit Logs",
             icon: Activity,
             active: pathname === "/security",
+            show: user?.permissions?.includes("VIEW_LOGS"),
         },
-    ]
-
-    if (user?.roles?.includes("ADMIN")) {
-        routes.push({
+        {
             href: "/admin",
             label: "Admin",
             icon: Shield,
             active: pathname === "/admin",
-        })
-    }
+            show: user?.roles?.includes("ADMIN") || user?.permissions?.includes("MANAGE_USERS"),
+        },
+    ]
+
+    const routes = allRoutes.filter((r) => r.show)
 
     return (
         <div className="flex min-h-screen flex-col bg-background/50">

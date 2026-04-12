@@ -11,6 +11,7 @@ from app.dependencies import get_current_user, require_chat
 from app.services.rag import rag_service
 from app.services.audit import audit_service
 from app.services.security_filter import security_filter
+from app.services.rate_limit import rate_limiter
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -74,7 +75,10 @@ async def chat(
     request_id = str(uuid.uuid4())
     ip_address = request.client.host
     user_agent = request.headers.get("user-agent", "unknown")
-    
+
+    # 0. Rate limit check
+    await rate_limiter.check_chat_rate_limit(current_user.id)
+
     # 1. Prompt Injection Detection
     if security_filter.detect_prompt_injection(message.message):
         # Create blocked query record

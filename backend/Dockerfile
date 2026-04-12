@@ -24,8 +24,8 @@ RUN mkdir -p /app/uploads
 # Expose port
 EXPOSE 8000
 
-# Make entrypoint script executable
-RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
+# Strip Windows CRLF line endings from all shell scripts and make executable
+RUN find . -name "*.sh" -exec sed -i 's/\r$//' {} \; && chmod +x entrypoint.sh
 
 # Run the entrypoint script
 CMD ["./entrypoint.sh"]

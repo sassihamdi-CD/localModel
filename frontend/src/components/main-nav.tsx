@@ -42,8 +42,8 @@ export function MainNav({
         },
         {
             name: "Audit Logs",
-            href: "/logs",
-            active: pathname === "/logs",
+            href: "/security",
+            active: pathname === "/security",
             show: user.permissions?.includes("VIEW_LOGS"),
         },
     ]

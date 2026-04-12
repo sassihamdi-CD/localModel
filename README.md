@@ -1,101 +1,58 @@
 # SecureDoc-RAG
 
-A fully local, privacy-preserving document intelligence system. Upload PDFs, Word documents, or text files and chat with them. Everything runs on your machine with no external API keys required.
-
----
-
-## What It Does
-
-- **Secure document vault** — upload and encrypt internal documents (PDF, DOCX, TXT)
-- **Intelligent chat** — ask questions about your documents, get answers with source context
-- **Role-based access control** — admin, employee, auditor roles with per-document permissions
-- **Full audit trail** — every login, upload, and query is logged
-- **100% local** — runs via Ollama on your machine, nothing leaves your network
+A fully local, privacy-preserving document intelligence system. Upload PDFs, Word documents, or text files and ask questions about them using AI. Everything runs on your machine — no internet, no API keys, no data leaving your network.
 
 ---
 
 ## Requirements
-
-Before you start, make sure you have these installed:
 
 | Tool | Version | Download |
 |---|---|---|
 | Docker Desktop | Latest | https://www.docker.com/products/docker-desktop |
 | Ollama | Latest | https://ollama.com |
 
-**Check Docker is installed:**
-```bash
-docker --version
-docker compose version
-```
-You need Docker Compose v2 or later (`docker compose`, not `docker-compose`).
+> **Windows users:** Make sure Docker Desktop is set to use **WSL 2** as the backend (this is the default). You can verify in Docker Desktop → Settings → General → "Use the WSL 2 based engine".
+
+> **NVIDIA GPU users (Windows):** Ollama automatically detects and uses your GPU. No extra configuration needed — just install the latest NVIDIA drivers before installing Ollama.
 
 ---
 
 ## Step 1 — Install Ollama and Pull the Model
 
-Ollama runs the local language model. Install it first, then download the model.
-
 **Install Ollama:**
-- **macOS / Windows:** Download from https://ollama.com and run the installer
+- **Windows / macOS:** Download from https://ollama.com and run the installer
 - **Linux:**
   ```bash
   curl -fsSL https://ollama.com/install.sh | sh
   ```
 
-**Pull the model** (downloads ~2 GB, one time only):
+**Pull the required model** (downloads ~2 GB, one time only):
 ```bash
 ollama pull qwen2.5:3b
 ```
 
-**Verify Ollama is running and the model is ready:**
+**Verify the model is ready:**
 ```bash
 ollama list
 ```
 You should see `qwen2.5:3b` in the list.
 
-> Ollama must stay running in the background while you use the app.
-> On macOS and Windows it runs automatically after install.
-> On Linux, start it with:
-> ```bash
-> ollama serve
-> ```
+> Ollama must be running in the background while you use the app.
+> On Windows and macOS it starts automatically after install.
+> On Linux, start it with: `ollama serve`
 
 ---
 
 ## Step 2 — Clone the Repository
 
 ```bash
-git clone <your-repo-url> securedoc-rag
+git clone https://github.com/sassihamdi-CD/localModel.git securedoc-rag
 cd securedoc-rag
 ```
 
 ---
 
-## Step 3 — Verify the `.env` File Exists
-
-The `.env` file is included in the project with all defaults pre-configured. Just verify it is there:
-
-```bash
-ls .env
-```
-
-You should see `.env` listed. No edits needed for a standard setup.
-
-> **Only if port 3000 is already in use on your machine:**
-> Open `.env` in any text editor and find these two commented lines near the bottom:
-> ```
-> # FRONTEND_PORT=3003
-> # CORS_ORIGINS=http://localhost:3003,http://127.0.0.1:3003,http://[::1]:3003
-> ```
-> Remove the `#` from both lines, then add `#` to the existing `CORS_ORIGINS=http://localhost:3000,...` line just below them.
-> After this change, open the app on `http://localhost:3003` instead of `http://localhost:3000`.
-
----
-
-## Step 4 — Start the Application
-
-From inside the project folder, run:
+## Step 3 — Start the Application
 
 ```bash
 docker compose up --build -d
@@ -105,7 +62,7 @@ This will:
 1. Build the backend and frontend Docker images
 2. Start MySQL, Redis, ChromaDB, the API, and the frontend
 3. Automatically run database migrations
-4. Automatically create the admin user
+4. Automatically create all user accounts
 
 **The first build takes 3–5 minutes.** Subsequent starts are instant.
 
@@ -114,72 +71,77 @@ This will:
 docker compose logs -f backend
 ```
 
-Wait until you see this line:
+Wait until you see:
 ```
 SecureDoc-RAG is ready!
 ```
 
-Press `Ctrl+C` to stop following logs — the app keeps running in the background.
+Press `Ctrl+C` to stop following logs — the app keeps running.
 
-**Check all services are healthy:**
+**Check all services are running:**
 ```bash
 docker compose ps
 ```
 
-Expected output:
-```
-NAME                 STATUS
-securedoc_backend    Up (healthy)
-securedoc_chroma     Up
-securedoc_frontend   Up
-securedoc_mysql      Up (healthy)
-securedoc_redis      Up (healthy)
-```
+---
+
+## Step 4 — Open the App
+
+Go to: **http://localhost:3000**
 
 ---
 
-## Step 5 — Open the App
+## Default Accounts
 
-Open your browser and go to:
+| Role | Email | Password |
+|---|---|---|
+| **Admin** | `admin@test.com` | `Admin123!` |
+| **Employee** | `employee@test.com` | `Employee123!` |
+| **Doc Manager** | `docmgr@test.com` | `DocMgr123!` |
+| **Security Officer** | `security@test.com` | `Security123!` |
 
-```
-http://localhost:3000
-```
+---
 
-**Login with the default admin account:**
+## What Each Role Can Do
 
-| Field | Value |
-|---|---|
-| Email | `admin@test.com` |
-| Password | `Password123!` |
+| Feature | Admin | Doc Manager | Employee | Security Officer |
+|---|---|---|---|---|
+| Chat with AI | ✅ | ✅ | ✅ | ❌ |
+| View documents | ✅ | ✅ | ✅ | ✅ |
+| Upload documents | ✅ | ✅ | ❌ | ❌ |
+| Delete documents | ✅ | ✅ | ❌ | ❌ |
+| View audit logs | ✅ | ❌ | ❌ | ✅ |
+| Export logs CSV | ✅ | ❌ | ❌ | ✅ |
+| Manage users | ✅ | ❌ | ❌ | ❌ |
+| Document ACL | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
 ## Using the App
 
-### Upload a Document
+### Upload a Document (Admin or Doc Manager)
 
-1. Go to **Secure Vault** in the left sidebar
-2. Click **Ingest Data**
-3. Enter a name for the document (e.g. `Q4 Report`)
-4. Select a security clearance level (`Internal`, `Confidential`, etc.)
-5. Click **Browse** and pick a PDF, DOCX, or TXT file (max 50 MB)
-6. Click **Secure Upload**
+1. Go to **Documents** in the top nav
+2. Fill in the title, select a classification level, choose a file
+3. Click **Secure Upload**
 
-The document is encrypted and indexed. Allow 10–30 seconds depending on file size.
+**Classification levels:**
+- **Public** — visible to all users, accessible in chat by everyone
+- **Internal** — visible to all users, accessible in chat by everyone (default for most docs)
+- **Confidential** — only owner + users/roles explicitly granted access via Admin → Document Access
+- **Restricted** — same as Confidential but highest sensitivity level
 
 ### Chat with Your Documents
 
-1. Go to **Secure Terminal** in the left sidebar
-2. Type a question in the input box and press Enter
-3. The system answers based only on the content of your uploaded documents
+1. Go to **Chat** in the top nav
+2. Type a question and press Enter
+3. The AI answers based only on the content of uploaded documents
 
-**Example questions:**
-- *"Summarize the main points of this document"*
-- *"What does the document say about [topic]?"*
-- *"What are the key steps in the incident response procedure?"*
+### Grant Access to Confidential Documents (Admin only)
 
-> The system only answers from uploaded document content. If you ask about something not in any document, it will say it does not know — this is expected and correct.
+1. Go to **Admin** → **Document Access** tab
+2. Click the document on the left
+3. Grant access to a specific role or user on the right
 
 ---
 
@@ -189,9 +151,9 @@ The document is encrypted and indexed. Allow 10–30 seconds depending on file s
 docker compose down
 ```
 
-All your data (documents, users, chat history) is saved in Docker volumes and persists between restarts.
+All data (documents, users, chat history) is saved in Docker volumes and persists between restarts.
 
-**To start again later:**
+**Start again later:**
 ```bash
 docker compose up -d
 ```
@@ -200,76 +162,45 @@ docker compose up -d
 
 ## Troubleshooting
 
-### Backend keeps restarting
+### Port 3000 is already in use
 
-Check the logs for errors:
-```bash
-docker logs securedoc_backend
+Open `.env` and change:
 ```
-
-**Most common cause — Ollama is not running.**
-Make sure Ollama is started before or after the app:
-
-```bash
-# macOS / Windows: open the Ollama desktop app
-# Linux:
-ollama serve
+FRONTEND_PORT=3000
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://[::1]:3000
 ```
-
-Then restart just the backend:
-```bash
-docker compose restart backend
+to a free port, for example 3001:
 ```
-
----
-
-### "Invalid email or password" on login
-
-The admin password is reset automatically every time the backend starts. Always use:
-
-- Email: `admin@test.com`
-- Password: `Password123!`
-
----
-
-### Port 3000 already in use
-
-If startup fails with `Bind for 0.0.0.0:3000 failed: port is already allocated`, find a free port:
-
-```bash
-# macOS / Linux:
-for port in 3000 3001 3002 3003 3004; do
-  lsof -ti:$port >/dev/null 2>&1 && echo "$port: BUSY" || echo "$port: FREE"
-done
+FRONTEND_PORT=3001
+CORS_ORIGINS=http://localhost:3001,http://127.0.0.1:3001,http://[::1]:3001
 ```
-
-Then open `.env`, uncomment the `FRONTEND_PORT` and the matching `CORS_ORIGINS` lines, and set them to a free port number. Restart with:
-
+Then restart:
 ```bash
 docker compose down
 docker compose up -d
 ```
 
----
+### Chat returns errors or "Ollama not reachable"
 
-### Chat returns no results or model errors
+Make sure Ollama is running on your machine (not inside Docker — it runs natively):
 
-Check that the model is downloaded:
 ```bash
+# Check if model is downloaded:
 ollama list
-```
 
-If `qwen2.5:3b` is missing:
-```bash
+# If qwen2.5:3b is missing:
 ollama pull qwen2.5:3b
 ```
 
-Then restart the backend:
+On Windows, open the Ollama app from the system tray to make sure it is running.
+
+### Backend keeps restarting
+
 ```bash
-docker compose restart backend
+docker compose logs backend
 ```
 
----
+Most common cause: database not ready yet. Wait 30 seconds and run `docker compose up -d` again.
 
 ### Full reset — wipe everything and start fresh
 
@@ -287,31 +218,20 @@ docker compose up --build -d
 ```
 Your Browser
   │
-  ├── Frontend  (Next.js)     → http://localhost:3000
+  ├── Frontend  (Next.js 14)    → http://localhost:3000
   │
-  └── Backend API (FastAPI)   → http://localhost:8000
-        ├── MySQL             → users, documents, audit logs
-        ├── Redis             → rate limiting, caching
-        ├── ChromaDB          → vector search for RAG
-        └── Ollama            → local model (runs on your machine)
+  └── Backend API (FastAPI)     → http://localhost:8000
+        ├── MySQL               → users, documents, audit logs (Docker)
+        ├── Redis               → rate limiting (Docker)
+        ├── ChromaDB            → vector embeddings (Docker)
+        └── Ollama              → local AI model (runs natively on your machine)
 ```
 
-All services run inside Docker except Ollama, which runs natively on your machine and is accessed by the backend container via `host.docker.internal:11434`.
+All services run inside Docker except Ollama, which runs natively on your machine and is accessed by the backend at `host.docker.internal:11434`.
 
 ---
 
-## Default Credentials
-
-| Service | Credential |
-|---|---|
-| App login | `admin@test.com` / `Password123!` |
-| MySQL root | `securedoc_root_p@ssw0rd!` |
-| MySQL app user | `rag_user` / `rag_p@ssw0rd_2026!` |
-| Redis | `redis_p@ssw0rd_secure_2026!` |
-
----
-
-## Quick Reference — All Commands
+## Quick Reference
 
 ```bash
 # First time setup
@@ -323,21 +243,15 @@ docker compose up -d
 # Stop
 docker compose down
 
-# View all logs live
+# View live logs
 docker compose logs -f
 
 # View backend logs only
 docker compose logs -f backend
 
-# Check status of all services
-docker compose ps
-
-# Restart a single service
-docker compose restart backend
-
-# Rebuild after any code changes
+# Rebuild after code changes
 docker compose up --build -d
 
-# Full reset — deletes all data
+# Full reset (deletes all data)
 docker compose down -v && docker compose up --build -d
 ```

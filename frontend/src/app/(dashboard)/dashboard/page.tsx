@@ -1,17 +1,46 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth-provider"
-import { Shield, FileText, MessageSquare, Users, Activity, Cpu, Database, Server } from "lucide-react"
+import { Shield, FileText, MessageSquare, Activity, Cpu, Database, Server } from "lucide-react"
 import { cn } from "@/lib/utils"
+import api from "@/lib/api"
+
+interface Stats {
+    documents: number
+    queries: number
+    intercepted_threats: number
+}
 
 export default function DashboardPage() {
     const { user } = useAuth()
+    const [stats, setStats] = useState<Stats | null>(null)
+
+    useEffect(() => {
+        api.get("/stats").then(res => setStats(res.data)).catch(() => {})
+    }, [])
 
     const kpiData = [
-        { title: "Processed Documents", value: "2,045", trend: "+12.5%", trendUp: true, icon: FileText },
-        { title: "RAG Queries", value: "14,392", trend: "+43.2%", trendUp: true, icon: MessageSquare },
-        { title: "Intercepted Threats", value: "84", trend: "-5.0%", trendUp: false, icon: Shield },
-        { title: "Active AI Sessions", value: "32", trend: "+18.1%", trendUp: true, icon: Users },
+        {
+            title: "Indexed Documents",
+            value: stats ? stats.documents.toLocaleString() : "—",
+            icon: FileText,
+        },
+        {
+            title: "RAG Queries",
+            value: stats ? stats.queries.toLocaleString() : "—",
+            icon: MessageSquare,
+        },
+        {
+            title: "Intercepted Threats",
+            value: stats ? stats.intercepted_threats.toLocaleString() : "—",
+            icon: Shield,
+        },
+        {
+            title: "Active Sessions",
+            value: "Live",
+            icon: Activity,
+        },
     ]
 
     return (
@@ -29,8 +58,8 @@ export default function DashboardPage() {
             {/* KPI Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {kpiData.map((kpi, idx) => (
-                    <div 
-                        key={idx} 
+                    <div
+                        key={idx}
                         className="glass relative overflow-hidden rounded-2xl p-6 border border-white/5 transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_-5px_rgba(56,189,248,0.2)] group"
                         style={{ animationDelay: `${idx * 100}ms` }}
                     >
@@ -45,9 +74,6 @@ export default function DashboardPage() {
                         </div>
                         <div>
                             <div className="text-3xl font-bold tracking-tight text-foreground/90">{kpi.value}</div>
-                            <p className={cn("text-xs font-medium mt-1", kpi.trendUp ? "text-emerald-400" : "text-destructive/80")}>
-                                {kpi.trend} from last epoch
-                            </p>
                         </div>
                     </div>
                 ))}
@@ -57,19 +83,18 @@ export default function DashboardPage() {
                 {/* Simulated Live Analytics Chart */}
                 <div className="glass col-span-4 rounded-2xl border border-white/5 p-6 flex flex-col gap-6 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
-                    
+
                     <div>
                         <h3 className="text-xl font-bold">RAG Retrieval Throughput</h3>
                         <p className="text-sm text-muted-foreground/70">Vectors processed per second (live stream)</p>
                     </div>
 
                     <div className="flex-1 flex items-end gap-2 h-48 mt-4 pt-4 border-b border-white/5">
-                        {/* CSS Simulated Bar Chart */}
                         {Array.from({ length: 30 }).map((_, i) => {
                             const height = Math.random() * 100 + 20
                             return (
                                 <div key={i} className="flex-1 flex flex-col justify-end h-full group relative">
-                                    <div 
+                                    <div
                                         className="w-full bg-primary/20 hover:bg-primary/60 rounded-t-sm transition-all duration-300"
                                         style={{ height: `${height}%`, animationDelay: `${i * 50}ms` }}
                                     >
@@ -83,15 +108,14 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* System Diagnostics Radar */}
+                {/* System Diagnostics */}
                 <div className="glass col-span-3 rounded-2xl border border-white/5 p-6 flex flex-col">
                     <div>
                         <h3 className="text-xl font-bold">System Diagnostics</h3>
                         <p className="text-sm text-muted-foreground/70">Matrix health overview</p>
                     </div>
-                    
+
                     <div className="flex-1 flex flex-col justify-center gap-6 mt-6">
-                        
                         <div className="flex items-center gap-4 group">
                             <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
                                 <Database className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
@@ -134,12 +158,11 @@ export default function DashboardPage() {
                                     <span className="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">STABLE</span>
                                 </div>
                                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-rose-400 w-[45%] rounded-full shadow-[0_0_10px_rgba(2fb,113,133,0.8)]"></div>
+                                    <div className="h-full bg-rose-400 w-[45%] rounded-full shadow-[0_0_10px_rgba(251,113,133,0.8)]"></div>
                                 </div>
-                                <p className="text-[10px] text-muted-foreground mt-1.5 line-clamp-1">Load balanced • 45% capacity • 12ms latency</p>
+                                <p className="text-[10px] text-muted-foreground mt-1.5">Load balanced • Encrypted • Local only</p>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,36 +9,60 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { User, Mail, Building, ShieldCheck, Key, Fingerprint, Lock, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
+import api from "@/lib/api"
 
 export default function ProfilePage() {
     const { user } = useAuth()
     const [isSaving, setIsSaving] = useState(false)
     const [isPasswordSaving, setIsPasswordSaving] = useState(false)
 
-    // Dummy states for the UI payload
-    const [name, setName] = useState(user?.name || "Administrator")
-    const [email, setEmail] = useState(user?.email || "admin@secure.doc")
-    const [department, setDepartment] = useState(user?.department || "Directorate")
+    const [name, setName] = useState(user?.name || "")
+    const [department, setDepartment] = useState(user?.department || "")
 
-    const handleSaveProfile = (e: React.FormEvent) => {
+    const currentPwdRef = useRef<HTMLInputElement>(null)
+    const newPwdRef = useRef<HTMLInputElement>(null)
+    const confirmPwdRef = useRef<HTMLInputElement>(null)
+
+    const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsSaving(true)
-        setTimeout(() => {
-            toast.success("Identity Matrix Updated.")
+        try {
+            await api.patch("/users/me", { name, department })
+            toast.success("Profile updated successfully.")
+        } catch (err: any) {
+            const msg = err?.response?.data?.detail || "Failed to update profile."
+            toast.error(msg)
+        } finally {
             setIsSaving(false)
-        }, 1200)
+        }
     }
 
-    const handleUpdatePassword = (e: React.FormEvent) => {
+    const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault()
+        const old_password = currentPwdRef.current?.value || ""
+        const new_password = newPwdRef.current?.value || ""
+        const confirm = confirmPwdRef.current?.value || ""
+
+        if (new_password !== confirm) {
+            toast.error("New passwords do not match.")
+            return
+        }
+        if (new_password.length < 8) {
+            toast.error("Password must be at least 8 characters.")
+            return
+        }
+
         setIsPasswordSaving(true)
-        setTimeout(() => {
-            toast.success("Cryptographic Keys Rotated.")
+        try {
+            await api.patch("/users/me/password", { old_password, new_password })
+            toast.success("Password changed successfully.")
+            ;(e.target as HTMLFormElement).reset()
+        } catch (err: any) {
+            const msg = err?.response?.data?.detail || "Failed to change password."
+            toast.error(msg)
+        } finally {
             setIsPasswordSaving(false)
-            // Just clearing inputs for visual effect
-            const form = e.target as HTMLFormElement
-            form.reset()
-        }, 1500)
+        }
     }
 
     return (
@@ -58,7 +82,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2">
-                    
+
                     {/* Personal Information */}
                     <Card className="glass border-white/5 shadow-xl">
                         <form onSubmit={handleSaveProfile}>
@@ -74,11 +98,11 @@ export default function ProfilePage() {
                                     <Label htmlFor="name" className="text-muted-foreground">Full Designation</Label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="name" 
-                                            value={name} 
+                                        <Input
+                                            id="name"
+                                            value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary/50" 
+                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary/50"
                                         />
                                     </div>
                                 </div>
@@ -86,12 +110,12 @@ export default function ProfilePage() {
                                     <Label htmlFor="email" className="text-muted-foreground">Secure Comm-Link (Email)</Label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="email" 
-                                            type="email" 
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary/50" 
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            value={user?.email || ""}
+                                            disabled
+                                            className="pl-10 bg-background/50 border-white/10 opacity-60 cursor-not-allowed"
                                         />
                                     </div>
                                 </div>
@@ -99,15 +123,15 @@ export default function ProfilePage() {
                                     <Label htmlFor="dept" className="text-muted-foreground">Assigned Directorate</Label>
                                     <div className="relative">
                                         <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="dept" 
+                                        <Input
+                                            id="dept"
                                             value={department}
                                             onChange={(e) => setDepartment(e.target.value)}
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary/50" 
+                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-primary/50"
                                         />
                                     </div>
                                 </div>
-                                
+
                                 <div className="pt-2 border-t border-white/5 mt-4">
                                     <div className="flex items-center gap-2 mt-4">
                                         <span className="text-sm text-muted-foreground">Access Classification:</span>
@@ -141,11 +165,12 @@ export default function ProfilePage() {
                                     <Label htmlFor="current_pwd" className="text-muted-foreground">Current Passkey</Label>
                                     <div className="relative">
                                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="current_pwd" 
-                                            type="password" 
+                                        <Input
+                                            id="current_pwd"
+                                            type="password"
+                                            ref={currentPwdRef}
                                             required
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50" 
+                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -154,11 +179,12 @@ export default function ProfilePage() {
                                     <Label htmlFor="new_pwd" className="text-muted-foreground">New Passkey</Label>
                                     <div className="relative">
                                         <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="new_pwd" 
-                                            type="password" 
+                                        <Input
+                                            id="new_pwd"
+                                            type="password"
+                                            ref={newPwdRef}
                                             required
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50" 
+                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50"
                                             placeholder="••••••••"
                                         />
                                     </div>
@@ -167,18 +193,19 @@ export default function ProfilePage() {
                                     <Label htmlFor="confirm_pwd" className="text-muted-foreground">Confirm New Passkey</Label>
                                     <div className="relative">
                                         <ShieldCheck className="absolute left-3 top-3 h-4 w-4 text-muted-foreground opacity-50" />
-                                        <Input 
-                                            id="confirm_pwd" 
-                                            type="password" 
+                                        <Input
+                                            id="confirm_pwd"
+                                            type="password"
+                                            ref={confirmPwdRef}
                                             required
-                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50" 
+                                            className="pl-10 bg-background/50 border-white/10 focus-visible:ring-orange-500/50"
                                             placeholder="••••••••"
                                         />
                                     </div>
                                 </div>
                             </CardContent>
                             <CardFooter className="bg-black/20 border-t border-orange-500/10 pt-4 flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-xs text-muted-foreground">You will remain logged in.</p>
+                                <p className="text-xs text-muted-foreground">You will remain logged in after rotating your key.</p>
                                 <Button type="submit" disabled={isPasswordSaving} variant="outline" className="w-full sm:w-auto border-orange-500/50 text-orange-400 hover:bg-orange-500/10 hover:text-orange-300 gap-2">
                                     {isPasswordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                                     Rotate Key

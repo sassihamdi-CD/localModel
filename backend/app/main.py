@@ -1,13 +1,19 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.middleware.request_id import RequestIdMiddleware
 from app.services.rate_limit import rate_limiter
 from app.routers import auth, admin, documents, chat, logs, users
+from app.models.models import Document, ChatQuery, AuditLog
+from app.dependencies import get_current_user
+from app.models.models import User
 
 
 @asynccontextmanager
@@ -55,6 +61,25 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
+
+
+# Dashboard stats endpoint
+@app.get("/api/stats")
+async def get_stats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Aggregate stats for the dashboard."""
+    doc_count = (await db.execute(select(func.count()).select_from(Document))).scalar_one()
+    query_count = (await db.execute(select(func.count()).select_from(ChatQuery))).scalar_one()
+    blocked_count = (await db.execute(
+        select(func.count()).select_from(AuditLog).where(AuditLog.outcome == "BLOCKED")
+    )).scalar_one()
+    return {
+        "documents": doc_count,
+        "queries": query_count,
+        "intercepted_threats": blocked_count,
+    }
 
 
 # Health check endpoint
