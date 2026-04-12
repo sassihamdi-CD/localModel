@@ -13,7 +13,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# --timeout 300  : give each package 5 minutes to download (handles slow connections)
+# --retries 5    : retry failed downloads up to 5 times automatically
+RUN pip install --no-cache-dir --timeout 300 --retries 5 -r requirements.txt
 
 # Copy application code
 COPY . .
