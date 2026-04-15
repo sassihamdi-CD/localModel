@@ -56,6 +56,7 @@ class AccessRequest(Base):
     name = Column(String(255), nullable=False)
     department = Column(String(100))
     reason = Column(Text)
+    password_hash = Column(String(255), nullable=True)
     status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)

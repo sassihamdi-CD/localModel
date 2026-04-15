@@ -263,17 +263,25 @@ class AuthService:
         result = await db.execute(select(User).where(User.email == data.email))
         if result.scalar_one_or_none():
             raise ValueError("Email already registered")
-            
+
         # Check if pending request exists
         result = await db.execute(select(AccessRequest).where(AccessRequest.email == data.email, AccessRequest.status == "PENDING"))
         if result.scalar_one_or_none():
-             raise ValueError("A pending request for this email already exists")
+            raise ValueError("A pending request for this email already exists")
+
+        # Validate and hash the user's chosen password
+        is_valid, error_msg = validate_password_strength(data.password)
+        if not is_valid:
+            raise ValueError(error_msg)
+
+        password_hash = hash_password(data.password)
 
         request = AccessRequest(
             email=data.email,
             name=data.name,
             department=data.department,
             reason=data.reason,
+            password_hash=password_hash,
             status="PENDING",
             created_at=datetime.utcnow()
         )
@@ -298,29 +306,25 @@ class AuthService:
         if not request or request.status != "PENDING":
              raise ValueError("Request not found or not pending")
         
-        # Create user (password needs to be set by user or temp)
-        # For this MVP, we will set a random password and log it (or require email flow which is too complex)
-        # Detailed approach: Create user with PENDING/ACTIVE and specific temp password.
-        # Let's set a default temp password for now: "ChangeMe123!"
-        
-        temp_password = "ChangeMe123!"
-        password_hash = hash_password(temp_password)
-        
+        # Use the password hash the user chose when submitting their request
+        if not request.password_hash:
+            raise ValueError("Access request has no password set. User must re-submit their request.")
+
         user = User(
             email=request.email,
             name=request.name,
             department=request.department,
-            password_hash=password_hash,
+            password_hash=request.password_hash,
             status=UserStatus.ACTIVE,
             created_at=datetime.utcnow()
         )
         db.add(user)
-        
+
         # Update request
         request.status = "ACTIVE"
         request.reviewed_by = admin_id
         request.reviewed_at = datetime.utcnow()
-        request.notes = f"Approved by admin. Temp password: {temp_password}"
+        request.notes = "Approved by admin."
         
         # Assign default EMPLOYEE role
         result = await db.execute(select(Role).where(Role.name == "EMPLOYEE"))

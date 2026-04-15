@@ -28,6 +28,11 @@ const requestAccessSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     department: z.string().optional(),
     reason: z.string().min(10, "Please provide a reason for access (min 10 characters)"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
 })
 
 type RequestAccessFormValues = z.infer<typeof requestAccessSchema>
@@ -47,8 +52,9 @@ export default function RequestAccessPage() {
     const onSubmit = async (data: RequestAccessFormValues) => {
         setIsLoading(true)
         try {
-            await api.post("/auth/request-access", data)
-            toast.success("Access request submitted successfully! An admin will review it shortly.")
+            const { confirmPassword, ...payload } = data
+            await api.post("/auth/request-access", payload)
+            toast.success("Access request submitted! An admin will review it shortly. You can log in once approved.")
             router.push("/login")
         } catch (error: any) {
             console.error(error)
@@ -119,6 +125,34 @@ export default function RequestAccessPage() {
                             />
                             {errors.reason && (
                                 <p className="text-sm text-destructive">{errors.reason.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                placeholder="Min. 8 characters"
+                                {...register("password")}
+                                disabled={isLoading}
+                            />
+                            {errors.password && (
+                                <p className="text-sm text-destructive">{errors.password.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <Input
+                                id="confirmPassword"
+                                type="password"
+                                placeholder="Re-enter your password"
+                                {...register("confirmPassword")}
+                                disabled={isLoading}
+                            />
+                            {errors.confirmPassword && (
+                                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
                             )}
                         </div>
 

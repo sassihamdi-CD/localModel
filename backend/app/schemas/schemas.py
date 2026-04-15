@@ -11,6 +11,7 @@ class AccessRequestCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=255)
     department: Optional[str] = Field(None, max_length=100)
     reason: Optional[str] = None
+    password: str = Field(..., min_length=8)
 
 
 class AccessRequestResponse(BaseModel):
